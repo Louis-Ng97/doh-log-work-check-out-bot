@@ -1,0 +1,102 @@
+name: Daily Standup
+
+on:
+  # Automatic: Run every day at 9:00 AM Vietnam time (2 AM UTC)
+  schedule:
+    - cron: '0 2 * * *'
+  
+  # Manual: Allow running from Actions tab anytime
+  workflow_dispatch:
+
+jobs:
+  standup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Get code from repo
+      - uses: actions/checkout@v3
+      
+      # Step 2: Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      
+      # Step 3: Install npm packages
+      - name: Install dependencies
+        run: npm install
+      
+      # Step 4: Run the bot!
+      - name: Run Daily Standup
+        env:
+          JIRA_HOST: ${{ secrets.JIRA_HOST }}
+          JIRA_USER: ${{ secrets.JIRA_USER }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+          TEAMS_WEBHOOK: ${{ secrets.TEAMS_WEBHOOK }}
+        run: node daily-standup-bot.js
+
+# ===== SETUP INSTRUCTIONS =====
+# 
+# 1. Create this file at: .github/workflows/daily-standup.yml
+#
+# 2. Add GitHub Secrets:
+#    - Go to repo → Settings → Secrets and variables → Actions
+#    - New repository secret (5 total):
+#      * JIRA_HOST = https://your-company.atlassian.net
+#      * JIRA_USER = your-email@company.com
+#      * JIRA_API_TOKEN = [from https://id.atlassian.com/manage-profile/security/api-tokens]
+#      * JIRA_PROJECT_KEY = DOH
+#      * TEAMS_WEBHOOK = https://outlook.webhook.office.com/webhookb2/...
+#
+# 3. Commit & push this file to repo
+#
+# 4. Check Actions tab in GitHub:
+#    - Click "Daily Standup"
+#    - You'll see scheduled runs + manual trigger button
+#
+# 5. Run manually to test:
+#    - Actions → Daily Standup → "Run workflow" (green button)
+#    - Wait 1-2 minutes
+#    - Check Teams channel for message
+#
+# ===== TIMEZONE GUIDE =====
+#
+# Current: 0 2 * * * = 2 AM UTC = 9 AM Vietnam (UTC+7)
+#
+# Other timezones:
+# - 8 AM Vietnam  → 1 0 * * *
+# - 9 AM Vietnam  → 0 2 * * * ← CURRENT
+# - 10 AM Vietnam → 0 3 * * *
+# - 9 AM Thailand → 0 2 * * *
+# - 9 AM Hawaii   → 0 19 * * * (previous day UTC)
+#
+# Use this converter: https://crontab.guru/
+#
+# ===== MONITORING =====
+#
+# View logs:
+# 1. Go to GitHub repo
+# 2. Click "Actions" tab (top menu)
+# 3. Click "Daily Standup" workflow
+# 4. Click any run date to see full logs
+#
+# Success indicator:
+#   ✅ "Message sent to Teams successfully"
+#
+# Failure debugging:
+#   ❌ Check error message
+#   - Invalid API token?
+#   - Wrong webhook URL?
+#   - Secrets not added?
+#
+# ===== MAINTENANCE =====
+#
+# The bot will automatically run every day.
+# You can also:
+# - Disable workflow if needed (click on it → Disable)
+# - Edit schedule time (edit this file)
+# - Update code (just push changes)
+# - View full history (Actions tab)
+#
+# No server management needed! GitHub handles everything.
